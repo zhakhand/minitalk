@@ -1,16 +1,24 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   client.c                                           :+:      :+:    :+:   */
+/*   client_bonus.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dzhakhan <dzhakhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/26 13:16:01 by dzhakhan          #+#    #+#             */
-/*   Updated: 2024/07/27 14:48:59 by dzhakhan         ###   ########.fr       */
+/*   Created: 2024/07/27 14:49:27 by dzhakhan          #+#    #+#             */
+/*   Updated: 2024/07/27 16:10:43 by dzhakhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minitalk.h"
+#include "minitalk_bonus.h"
+
+volatile sig_atomic_t   g_response = 0;
+
+void	handle_signal(int signal)
+{
+	if (signal == SIGUSR1)
+		g_response = 1;
+}
 
 void	send_null_char(int pid)
 {
@@ -48,8 +56,20 @@ void	send_message(int pid, char *msg)
 	send_null_char(pid);
 }
 
+void    wait_response(void)
+{
+    while(1)
+    {
+        pause();
+        if (g_response == 1)
+            break ;
+    }
+	ft_printf("Message received");
+}
+
 int	main(int ac, char **av)
 {
+    struct sigaction    sa;
 	char	*msg;
 	int		pid;
 
@@ -59,18 +79,21 @@ int	main(int ac, char **av)
 		ft_printf("./client <PID> <Message>\n");
 		return (ERROR);
 	}
+    sa.sa_handler = handle_signal;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
 	pid = ft_atoi(av[1]);
 	msg = av[2];
-	if (!pid)
+	if (!pid || msg[0] == 0)
 	{
-		ft_printf("Wrong PID!\n");
+		if (!pid)
+            ft_printf("Wrong PID!\n");
+        if (msg[0] == 0)
+            ft_printf("Please provide a message!\n");
 		return (ERROR);
 	}
-	if (msg[0] == 0)
-	{
-		ft_printf("Please provide a message!\n");
-		return (ERROR);
-	}
-	send_message(pid, msg);
+    send_message(pid, msg);
+    send_message(pid, ft_itoa(getpid()));
+    wait_response();
 	return (SUCCESS);
 }

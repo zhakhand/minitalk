@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.c                                           :+:      :+:    :+:   */
+/*   server_bonus.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dzhakhan <dzhakhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/26 13:16:05 by dzhakhan          #+#    #+#             */
-/*   Updated: 2024/07/27 14:42:48 by dzhakhan         ###   ########.fr       */
+/*   Created: 2024/07/27 14:49:43 by dzhakhan          #+#    #+#             */
+/*   Updated: 2024/07/27 16:06:25 by dzhakhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minitalk.h"
+#include "minitalk_bonus.h"
 
 volatile sig_atomic_t	g_signal_received = 0;
 
@@ -22,17 +22,44 @@ void	handle_signals(int signal)
 		g_signal_received = 2;
 }
 
-void	set_up_handler(void)
+void    get_pid(void)
 {
-	struct sigaction	sa;
+    static char	*pid = NULL;
+    static char	num = 0;
+    static int	bits = 0;
+    char		str[2];
 
-	sa.sa_handler = handle_signals;
-	sa.sa_flags = 0;
-	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGUSR1, &sa, NULL) == -1)
+    if (!pid)
+        pid = ft_strdup("");
+    if (!pid)
 		exit (ERROR);
-	if (sigaction(SIGUSR2, &sa, NULL) == -1)
-		exit (ERROR);
+    num = (num << 1) | (g_signal_received - 1);
+    bits++;
+    if	(bits == 8)
+    {
+        str[0] = num;
+        str[1] = '\0';
+        pid = ft_strjoin(pid, str);
+        if (num == '\0')
+        {
+            kill(ft_atoi(pid), SIGUSR1);
+            usleep(300);
+            pid = NULL;
+        }
+		bits = 0;
+		num = 0;
+    }
+	g_signal_received = 0;
+}
+
+void    send_response()
+{
+    while (1)
+    {
+        pause();
+        if (g_signal_received)
+            get_pid();
+    }
 }
 
 void	decrypt(void)
@@ -56,6 +83,7 @@ void	decrypt(void)
 		if (letter == 0)
 		{
 			ft_printf("%s\n", msg);
+            send_response();
 			msg = NULL;
 		}
 		bits = 0;
@@ -66,8 +94,16 @@ void	decrypt(void)
 
 int	main(void)
 {
-	ft_printf("Welcome to the server! PID: %d\n", getpid());
-	set_up_handler();
+    struct sigaction	sa;
+
+    ft_printf("Welcome to the server! PID: %d\n", getpid());
+	sa.sa_handler = handle_signals;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGUSR1, &sa, NULL) == -1)
+		exit (ERROR);
+	if (sigaction(SIGUSR2, &sa, NULL) == -1)
+		exit (ERROR);
 	while (1)
 	{
 		pause();
