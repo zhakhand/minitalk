@@ -22,12 +22,12 @@ ${NAME}:	server client
 server:	server.o
 		${MAKE} -C libft
 		${MAKE} -C ft_printf
-		${CC} ${CFLAGS} $? ./libft/libft.a ./ft_printf/libftprintf.a -o server
+		${CC} ${CFLAGS} $? utils.c ./libft/libft.a ./ft_printf/libftprintf.a -o server
 
 client: client.o
 		${MAKE} -C libft
 		${MAKE} -C ft_printf
-		${CC} ${CFLAGS} $? ./libft/libft.a ./ft_printf/libftprintf.a -o client
+		${CC} ${CFLAGS} $? utils.c ./libft/libft.a ./ft_printf/libftprintf.a -o client
 
 libft:
 		make -C libft

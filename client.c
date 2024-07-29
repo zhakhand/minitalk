@@ -6,51 +6,43 @@
 /*   By: dzhakhan <dzhakhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/26 13:16:01 by dzhakhan          #+#    #+#             */
-/*   Updated: 2024/07/27 14:48:59 by dzhakhan         ###   ########.fr       */
+/*   Updated: 2024/07/29 14:44:32 by dzhakhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minitalk.h"
 
-void	send_null_char(int pid)
-{
-	int	i;
+volatile sig_atomic_t	g_signal = 0;
 
-	i = 0;
-	while (i < 8)
+void	handle_signals(int signal)
+{
+	if (signal == SIGUSR1)
 	{
-		kill(pid, SIGUSR1);
-		usleep(300);
-		i++;
+		g_signal = 1;
+	}
+	if (signal == SIGUSR2)
+	{
+		g_signal = 2;
+		ft_printf("Server received message!\n");
+		exit (SUCCESS);
 	}
 }
 
-void	send_message(int pid, char *msg)
+void	set_up_handler(void)
 {
-	int	pos;
-	int	bit;
+	struct sigaction	sa;
 
-	pos = 0;
-	while (msg[pos] != '\0')
-	{
-		bit = 7;
-		while (bit >= 0)
-		{
-			if (((msg[pos] >> bit) & 1) == 0)
-				kill(pid, SIGUSR1);
-			if (((msg[pos] >> bit) & 1) == 1)
-				kill(pid, SIGUSR2);
-			usleep(300);
-			bit--;
-		}
-		pos++;
-	}
-	send_null_char(pid);
+	sa.sa_handler = handle_signals;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGUSR1, &sa, NULL) == -1)
+		exit (ERROR);
+	if (sigaction(SIGUSR2, &sa, NULL) == -1)
+		exit (ERROR);
 }
 
 int	main(int ac, char **av)
 {
-	char	*msg;
 	int		pid;
 
 	if (ac != 3)
@@ -60,17 +52,17 @@ int	main(int ac, char **av)
 		return (ERROR);
 	}
 	pid = ft_atoi(av[1]);
-	msg = av[2];
-	if (!pid)
+	if (pid < 2)
 	{
 		ft_printf("Wrong PID!\n");
 		return (ERROR);
 	}
-	if (msg[0] == 0)
+	if (av[2][0] == 0)
 	{
 		ft_printf("Please provide a message!\n");
 		return (ERROR);
 	}
-	send_message(pid, msg);
+	set_up_handler();
+	send_message(pid, av[2]);
 	return (SUCCESS);
 }

@@ -6,7 +6,7 @@
 /*   By: dzhakhan <dzhakhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/26 14:04:05 by dzhakhan          #+#    #+#             */
-/*   Updated: 2024/07/27 14:36:24 by dzhakhan         ###   ########.fr       */
+/*   Updated: 2024/07/29 14:31:08 by dzhakhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,10 @@
 # include <unistd.h>
 
 # define ERROR 1
+
+void    send_message(int pid, char *msg);
+void    send_null_char(int pid);
+void    ft_kill(int pid, int sig);
 
 # define SUCCESS 0
 
