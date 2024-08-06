@@ -6,12 +6,15 @@
 /*   By: dzhakhan <dzhakhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/26 14:04:05 by dzhakhan          #+#    #+#             */
-/*   Updated: 2024/07/29 14:31:08 by dzhakhan         ###   ########.fr       */
+/*   Updated: 2024/08/06 14:04:28 by dzhakhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef MINITALK_H
 # define MINITALK_H
+
+# define BUFFER 500000
+# define MAX_PID 4194304
 
 # include <signal.h>
 # include "./ft_printf/ft_printf.h"
@@ -22,9 +25,15 @@
 
 # define ERROR 1
 
-void    send_message(int pid, char *msg);
-void    send_null_char(int pid);
-void    ft_kill(int pid, int sig);
+void	ft_kill(int pid, int sig);
+
+typedef struct s_pain
+{
+	char	msg[BUFFER];
+	int		bits;
+	int		pos;
+	int		signal;
+}				t_pain;
 
 # define SUCCESS 0
 

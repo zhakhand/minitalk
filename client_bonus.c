@@ -6,19 +6,13 @@
 /*   By: dzhakhan <dzhakhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/27 14:49:27 by dzhakhan          #+#    #+#             */
-/*   Updated: 2024/07/27 16:10:43 by dzhakhan         ###   ########.fr       */
+/*   Updated: 2024/08/06 14:06:26 by dzhakhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minitalk_bonus.h"
+#include "minitalk.h"
 
-volatile sig_atomic_t   g_response = 0;
-
-void	handle_signal(int signal)
-{
-	if (signal == SIGUSR1)
-		g_response = 1;
-}
+volatile sig_atomic_t	g_signal = 0;
 
 void	send_null_char(int pid)
 {
@@ -27,8 +21,10 @@ void	send_null_char(int pid)
 	i = 0;
 	while (i < 8)
 	{
-		kill(pid, SIGUSR1);
-		usleep(300);
+		g_signal = 0;
+		ft_kill(pid, 1);
+		if (g_signal == 0)
+			pause();
 		i++;
 	}
 }
@@ -44,11 +40,13 @@ void	send_message(int pid, char *msg)
 		bit = 7;
 		while (bit >= 0)
 		{
+			g_signal = 0;
 			if (((msg[pos] >> bit) & 1) == 0)
-				kill(pid, SIGUSR1);
+				ft_kill(pid, 1);
 			if (((msg[pos] >> bit) & 1) == 1)
-				kill(pid, SIGUSR2);
-			usleep(300);
+				ft_kill(pid, 2);
+			if (g_signal == 0)
+				pause();
 			bit--;
 		}
 		pos++;
@@ -56,21 +54,35 @@ void	send_message(int pid, char *msg)
 	send_null_char(pid);
 }
 
-void    wait_response(void)
+void	handle_signals(int signal)
 {
-    while(1)
-    {
-        pause();
-        if (g_response == 1)
-            break ;
-    }
-	ft_printf("Message received");
+	if (signal == SIGUSR1)
+	{
+		g_signal = 1;
+	}
+	if (signal == SIGUSR2)
+	{
+		g_signal = 2;
+		ft_printf("Server received message!\n");
+		exit (SUCCESS);
+	}
+}
+
+void	set_up_handler(void)
+{
+	struct sigaction	sa;
+
+	sa.sa_handler = handle_signals;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGUSR1, &sa, NULL) == -1)
+		exit (ERROR);
+	if (sigaction(SIGUSR2, &sa, NULL) == -1)
+		exit (ERROR);
 }
 
 int	main(int ac, char **av)
 {
-    struct sigaction    sa;
-	char	*msg;
 	int		pid;
 
 	if (ac != 3)
@@ -79,21 +91,19 @@ int	main(int ac, char **av)
 		ft_printf("./client <PID> <Message>\n");
 		return (ERROR);
 	}
-    sa.sa_handler = handle_signal;
-	sa.sa_flags = 0;
-	sigemptyset(&sa.sa_mask);
 	pid = ft_atoi(av[1]);
-	msg = av[2];
-	if (!pid || msg[0] == 0)
+	if (pid < 2 || ft_strncmp(av[1], ft_itoa(pid), ft_strlen(av[1])) != 0
+		|| pid > MAX_PID)
 	{
-		if (!pid)
-            ft_printf("Wrong PID!\n");
-        if (msg[0] == 0)
-            ft_printf("Please provide a message!\n");
+		ft_printf("Wrong PID!\n");
 		return (ERROR);
 	}
-    send_message(pid, msg);
-    send_message(pid, ft_itoa(getpid()));
-    wait_response();
+	if (av[2][0] == 0)
+	{
+		ft_printf("Please provide a message!\n");
+		return (ERROR);
+	}
+	set_up_handler();
+	send_message(pid, av[2]);
 	return (SUCCESS);
 }

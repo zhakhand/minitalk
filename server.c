@@ -6,48 +6,40 @@
 /*   By: dzhakhan <dzhakhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/26 13:16:05 by dzhakhan          #+#    #+#             */
-/*   Updated: 2024/07/29 14:51:51 by dzhakhan         ###   ########.fr       */
+/*   Updated: 2024/08/06 13:28:09 by dzhakhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minitalk.h"
 
-volatile sig_atomic_t	g_signal_received = 0;
+static t_pain	g_u;
 
 void	decrypt(int pid)
 {
-	static char	*msg = NULL;
-	static int	bits = 0;
-	static char	letter[2] = {0, 0};
-
-	if (!msg)
-		msg = ft_strdup("");
-	if (!msg)
-		exit (ERROR);
-	letter[0] = (letter[0] << 1) | (g_signal_received - 1);
-	bits++;
-	if (bits == 8)
+	g_u.msg[g_u.pos] = (g_u.msg[g_u.pos] << 1) | (g_u.signal - 1);
+	g_u.bits++;
+	if (g_u.bits == 8)
 	{
-		msg = ft_strjoin(msg, letter);
-		if (letter[0] == 0)
+		g_u.pos++;
+		if (g_u.msg[g_u.pos - 1] == 0)
 		{
-			ft_printf("%s\n", msg);
-			ft_free(&msg);
+			ft_printf("%s\n", g_u.msg);
+			g_u.pos = 0;
+			ft_bzero(g_u.msg, BUFFER);
 			ft_kill(pid, 2);
 		}
-		bits = 0;
-		letter[0] = 0;
+		g_u.bits = 0;
 	}
-	g_signal_received = 0;
+	g_u.signal = 0;
 }
 
 void	handle_signals(int signal, siginfo_t *info, void *data)
 {
 	(void)data;
 	if (signal == SIGUSR1)
-		g_signal_received = 1;
+		g_u.signal = 1;
 	if (signal == SIGUSR2)
-		g_signal_received = 2;
+		g_u.signal = 2;
 	decrypt(info->si_pid);
 	ft_kill(info->si_pid, 1);
 }
